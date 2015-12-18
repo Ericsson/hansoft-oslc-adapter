@@ -1,0 +1,1 @@
+java -jar h2hvalidator.jar "%1" "%2"

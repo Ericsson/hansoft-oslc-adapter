@@ -1,0 +1,150 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="Hansoft2HansoftConfig">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="friendsList">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="friend" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element type="xs:string" name="friendName"/>
+                    <xs:element type="xs:string" name="username"/>
+                    <xs:element type="xs:string" name="password"/>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="projectList">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="project" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element type="xs:string" name="server"/>
+                    <xs:element type="xs:string" name="database"/>
+                    <xs:element type="xs:string" name="projectName"/>
+                    <xs:element type="xs:string" name="projectUserName"/>
+                    <xs:element name="integrationLinks">
+                    <xs:complexType>
+                      <xs:all>
+                        <xs:element type="xs:string" name="backlinkColumnName"/>
+                      </xs:all>
+                    </xs:complexType>
+                    </xs:element>
+                      <xs:element name="syncList">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="sync" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:all>
+                                <xs:element type="xs:string" name="friendName"/>
+                                <xs:element type="xs:string" name="hansoftActorType"/>
+                                <xs:element type="xs:string" name="server"/>
+                                <xs:element type="xs:string" name="database"/>
+                                <xs:element type="xs:string" name="projectName"/>
+                                <xs:element type="xs:positiveInteger" name="parentTaskid" minOccurs="0" maxOccurs="1"/>
+                                <xs:element type="xs:string" name="creationFactoryURL"/>
+                                <xs:element name="keepInSync" minOccurs="0" maxOccurs="1">
+                                  <xs:simpleType>
+								    <xs:restriction base="xs:string">
+								      <xs:enumeration value="true"/>
+								      <xs:enumeration value="false"/>
+								    </xs:restriction>
+								  </xs:simpleType>
+                                </xs:element>
+                                <xs:element name="scheduling" minOccurs="0" maxOccurs="1">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="triggers">
+                                        <xs:complexType>
+                                          <xs:sequence>
+                                            <xs:element name="trigger" minOccurs="1" maxOccurs="unbounded">
+                                              <xs:complexType>
+                                                <xs:simpleContent>
+                                                  <xs:extension base="xs:string">
+                                                    <xs:attribute name="active" use="required">
+				                                    	<xs:simpleType>
+				                                        	<xs:restriction base="xs:string">
+				                                            	<xs:pattern value="true|false"/>
+				                                           	</xs:restriction>
+				                                        </xs:simpleType>
+				                                    </xs:attribute>
+                                                    <xs:attribute type="xs:string" name="schedule" use="required"/>
+                                                  </xs:extension>
+                                                </xs:simpleContent>
+                                              </xs:complexType>
+                                            </xs:element>
+                                          </xs:sequence>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="active" use="required">
+                                    	<xs:simpleType>
+                                        	<xs:restriction base="xs:string">
+                                            	<xs:pattern value="true|false"/>
+                                           	</xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="mappings" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="mapping" minOccurs="0" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:simpleContent>
+                                            <xs:extension base="xs:string">
+                                              <xs:attribute name="use" use="optional">
+                                                <xs:simpleType>
+                                                  <xs:restriction base="xs:string">
+                                                    <xs:pattern value="create|update"/>
+                                                  </xs:restriction>
+                                                </xs:simpleType>
+                                              </xs:attribute>
+                                              <xs:attribute type="xs:string" name="nameSpace" use="required"/>
+                                              <xs:attribute type="xs:string" name="localPart" use="required"/>
+                                              <xs:attribute type="xs:string" name="destinationNameSpace" use="required"/>
+                                              <xs:attribute type="xs:string" name="destinationLocalPart" use="required"/>
+                                            </xs:extension>
+                                          </xs:simpleContent>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="syncRules" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="syncRule" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                          <xs:simpleContent>
+                                            <xs:extension base="xs:string">
+                                              <xs:attribute type="xs:string" name="attribute" use="required"/>
+                                              <xs:attribute type="xs:string" name="attributeNameSpace" use="required"/>
+                                              <xs:attribute type="xs:string" name="value" use="required"/>
+                                            </xs:extension>
+                                          </xs:simpleContent>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:all>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

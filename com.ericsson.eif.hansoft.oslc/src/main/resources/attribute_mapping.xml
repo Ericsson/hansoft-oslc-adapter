@@ -1,0 +1,24 @@
+<?xml-stylesheet type="text/xsl" href=""?>
+
+<!--
+
+Copied from TFS solution, but not supporting all capabilities of TFS solution.
+
+The mapping is grouped per "property".
+
+A "property" entry has the following XML attributes 
+
+    key             Mandatory. This is the name of the property in the external view (to be completed)
+    value           Mandatory. This is the name of the HS field or "calculated" fields that are used in special cases (to be completed).
+	showInWebUI		Optional. If the attribute should be shown in the generated web UI.				
+
+-->
+
+<mapping>
+    <property key="hs_ext:OSLC_20_Reference" value="OSLC Reference" showInWebUI="true"/>
+ 	<property key="hs_ext:Link_20_to" value="Link to" showInWebUI="true"/>
+	<property key="dcterms:modified" value="Modified" showInWebUI="true"/>
+	<property key="oslc_cm:status" value="Status" showInWebUI="true"/>
+	<property key="oslc_cm:closeDate" value="Close Date" showInWebUI="true"/>
+	<property key="dcterms:description" value="Description" showInWebUI="true"/>
+</mapping>

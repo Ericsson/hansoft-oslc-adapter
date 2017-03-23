@@ -20,7 +20,6 @@
  *******************************************************************************/
 package com.ericsson.eif.hansoft.services;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -55,14 +54,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
 
 import org.apache.log4j.Logger;
-import org.apache.xpath.jaxp.XPathFactoryImpl;
 import org.eclipse.lyo.core.query.ParseException;
 import org.eclipse.lyo.core.query.Properties;
 import org.eclipse.lyo.core.query.QueryUtils;
@@ -79,26 +72,10 @@ import org.eclipse.lyo.oslc4j.core.model.OslcConstants;
 import org.eclipse.lyo.oslc4j.core.model.OslcMediaType;
 import org.eclipse.lyo.oslc4j.core.model.Service;
 import org.eclipse.lyo.oslc4j.core.model.ServiceProvider;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import se.hansoft.hpmsdk.EHPMError;
-import se.hansoft.hpmsdk.EHPMReportViewType;
-import se.hansoft.hpmsdk.EHPMTaskFindFlag;
-import se.hansoft.hpmsdk.HPMFindContext;
-import se.hansoft.hpmsdk.HPMFindContextData;
-import se.hansoft.hpmsdk.HPMProjectProperties;
-import se.hansoft.hpmsdk.HPMSdkException;
-import se.hansoft.hpmsdk.HPMSdkJavaException;
-import se.hansoft.hpmsdk.HPMSdkSession;
-import se.hansoft.hpmsdk.HPMTaskEnum;
-import se.hansoft.hpmsdk.HPMUniqueID;
 
 import com.ericsson.eif.hansoft.Constants;
 import com.ericsson.eif.hansoft.HansoftConnector;
 import com.ericsson.eif.hansoft.HansoftManager;
-import com.ericsson.eif.hansoft.configuration.LeanSyncConfig;
 import com.ericsson.eif.hansoft.exception.NoAccessException;
 import com.ericsson.eif.hansoft.factories.HansoftChangeRequestFactory;
 import com.ericsson.eif.hansoft.factories.HansoftServiceProviderFactory;
@@ -113,15 +90,18 @@ import com.ericsson.eif.hansoft.utils.HansoftUtils;
 import com.ericsson.eif.hansoft.utils.HttpUtils;
 import com.ericsson.eif.hansoft.utils.OSLCUtils;
 import com.ericsson.eif.hansoft.utils.StringUtils;
-import com.ericsson.eif.leansync.mapping.SyncConfigLoader;
-import com.ericsson.eif.leansync.mapping.SyncConstants;
-import com.ericsson.eif.leansync.mapping.SyncHelper;
-import com.ericsson.eif.leansync.mapping.data.SyncConfiguration;
-import com.ericsson.eif.leansync.mapping.data.SyncField;
-import com.ericsson.eif.leansync.mapping.data.SyncMapping;
-import com.ericsson.eif.leansync.mapping.data.SyncSnapshot;
-import com.ericsson.eif.leansync.mapping.data.SyncTemplate;
-import com.ericsson.eif.leansync.mapping.data.SyncXmlFieldConfig;
+
+import se.hansoft.hpmsdk.EHPMError;
+import se.hansoft.hpmsdk.EHPMReportViewType;
+import se.hansoft.hpmsdk.EHPMTaskFindFlag;
+import se.hansoft.hpmsdk.HPMFindContext;
+import se.hansoft.hpmsdk.HPMFindContextData;
+import se.hansoft.hpmsdk.HPMProjectProperties;
+import se.hansoft.hpmsdk.HPMSdkException;
+import se.hansoft.hpmsdk.HPMSdkJavaException;
+import se.hansoft.hpmsdk.HPMSdkSession;
+import se.hansoft.hpmsdk.HPMTaskEnum;
+import se.hansoft.hpmsdk.HPMUniqueID;
 
 @OslcService(OslcConstants.OSLC_CORE_DOMAIN)
 @Path(HansoftManager.SERVICE_PROVIDER_PATH_SEGMENT + "/{productId}")
@@ -701,13 +681,6 @@ public class ServiceProviderService {
 			hl.log(changeRequest);
 		}
 		
-		try {
-			processLeanSync(productId, changeRequest);
-		} catch (Exception e) {
-			logger.error("Error processing lean sync for productId " + productId, e);
-			e.printStackTrace();
-		}
-		
 		HansoftChangeRequest newChangeRequest;
 		HPMUniqueID newTaskId;				
 		String toProjectName = "";
@@ -785,149 +758,6 @@ public class ServiceProviderService {
 		OSLCUtils.setETagHeader(OSLCUtils.getETagFromChangeRequest(newChangeRequest), httpServletResponse);
 		
 		return Response.created(newChangeRequest.getAbout()).entity(newChangeRequest).build();
-	}
-
-	/** 
-	 * process LeanSync
-	 * @param productId
-	 * @param changeRequest
-	 * @throws Exception
-	 */
-	private void processLeanSync(String productId, HansoftChangeRequest changeRequest) throws Exception {
-		String leanSync = httpServletRequest.getHeader(Constants.LEAN_SYNC_HEADER_FIELD);
-		if (!StringUtils.isEmpty(leanSync) && changeRequest != null && !StringUtils.isEmpty(productId)) {
-
-			SyncConfiguration configuration = LeanSyncConfig.getConfigurationMap().get(productId);
-			if (configuration == null) {
-				logger.error("LeanSync configuration for project with id " + productId + " not found.");
-				throw new Exception("LeanSync configuration for project with id " + productId + " not found.");
-			}
-			SyncMapping inMapping = configuration.getFirstInMapping();
-			if (inMapping == null) {
-				logger.error("LeanSync mapping for project with id " + productId + " not found in configuration");
-				throw new Exception("LeanSync mapping for project with id " + productId + " not found in configuration");
-			}
-
-			List<SyncField> fieldsOuter = inMapping.getFields();
-			List<SyncTemplate> templates = inMapping.getTemplates();
-		    List<SyncSnapshot> snapshots = new ArrayList<SyncSnapshot>();
-		    
-		    if (templates != null) {
-		      for (SyncTemplate syncTemplate : templates) {
-		        snapshots.add(new SyncSnapshot(syncTemplate, syncTemplate.getTemplate()));
-		      }
-		    }
-
-			String id;
-			String name;
-			String ns;
-			for (SyncField field : fieldsOuter) {
-				id = field.getId();
-				name = field.getName();
-				ns = field.getNs();
-				if (StringUtils.isEmpty(id) || StringUtils.isEmpty(ns) || StringUtils.isEmpty(name)) {
-					continue;
-				}
-				Object value = HansoftUtils.getValueOfAttribute(changeRequest, name, ns);
-				if (value != null) {
-					mapLeanSyncAttribute(changeRequest, snapshots, field, value);
-				}
-			}
-			
-			List<SyncXmlFieldConfig> xmlFieldConfigs = inMapping.getXmlFieldConfigs();
-			for (SyncXmlFieldConfig xmlFieldConfig : xmlFieldConfigs) {
-				ns = xmlFieldConfig.getNs();
-				name = xmlFieldConfig.getName();
-				if (StringUtils.isEmpty(ns) || StringUtils.isEmpty(name)) {
-					continue;
-				}
-				String xml = "";
-				Object xmlObject = HansoftUtils.getValueOfAttribute(changeRequest, name, ns);
-				if (xmlObject != null && xmlObject instanceof String) {
-					xml = xmlObject.toString();
-				}
-				
-				List<SyncField> fieldsInner = xmlFieldConfig.getFields();
-				for (SyncField field : fieldsInner) {
-					if (StringUtils.isEmpty(xml)) {
-						// xml content is empty -> update fields with empty string
-						mapLeanSyncAttribute(changeRequest, snapshots, field, "");
-					} else {
-						DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-						domFactory.setNamespaceAware(true);
-						DocumentBuilder builder = domFactory.newDocumentBuilder();
-						ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes());
-						Document doc = builder.parse(is);
-						if (doc == null) {
-							continue;
-						}
-
-						XPathFactory xpathFactory = new XPathFactoryImpl();
-						XPath xpath = xpathFactory.newXPath();
-						String strXpath = field.getXpath();
-						if (strXpath == null || strXpath.isEmpty()) {
-							continue;
-						}
-
-						// xml can contain 1 or more same tags -> save all tags
-						NodeList valueList = (NodeList) xpath.evaluate(strXpath, doc, XPathConstants.NODESET);
-						if (valueList != null && valueList.getLength() > 0) {
-							String value = null;
-							for (int i = 0; i < valueList.getLength(); i++) {
-								if (i != 0 && value != null) {
-									value += SyncConstants.END_OF_LINE;
-								}
-
-								Node node = valueList.item(i);
-
-								if (field.isKeepTags()) {
-									value = SyncHelper.appendText(value, SyncConfigLoader.loadXMLNodeValue(node));
-								} else {
-									value = SyncHelper.appendText(value, node.getTextContent());
-								}
-							}
-							mapLeanSyncAttribute(changeRequest, snapshots, field, value);
-						} else {
-							mapLeanSyncAttribute(changeRequest, snapshots, field, null);
-						}
-					}
-				}
-			}
-
-			SyncTemplate template;
-			for (SyncSnapshot snapShot : snapshots) {
-				template = snapShot.getTemplateConfig();
-				if(template != null && snapShot.getValue() != null && !StringUtils.isEmpty(template.getMapTo()) && !StringUtils.isEmpty(template.getFieldType())) {
-					HansoftUtils.setValueOfAttribute(changeRequest, template.getMapTo(), template.getFieldType(), snapShot.getValue().replaceAll("<br/>", Constants.LS));
-				}
-			}
-		}
-	}
-
-	/**
-	 * maps LeanSync attribute
-	 * @param changeRequest
-	 * @param snapshots
-	 * @param field
-	 * @param value
-	 */
-	private void mapLeanSyncAttribute(HansoftChangeRequest changeRequest, List<SyncSnapshot> snapshots, SyncField field, Object value) {
-		if (value == null) {
-			value = "";
-		}
-		// put it to snap shot
-		for (SyncSnapshot snapShot : snapshots) {
-	        String snapShotValue = snapShot.getValue();
-	        if(snapShotValue != null){
-	        	snapShotValue = snapShotValue.replaceAll(snapShot.getTemplateConfig().getIdPrefix() + field.getId() + snapShot.getTemplateConfig().getIdSuffix(), value.toString());
-	        }
-	        snapShot.setValue(snapShotValue);
-		}
-		
-		// put it to column
-		if(field.getMapTo() != null) {
-			HansoftUtils.setValueOfAttribute(changeRequest, field.getMapTo(), field.getFieldType(), value);
-		}
 	}
 
 	/**

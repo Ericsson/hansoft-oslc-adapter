@@ -40,7 +40,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.lyo.oslc4j.client.ServiceProviderRegistryURIs;
 
-import com.ericsson.eif.hansoft.configuration.LeanSyncConfig;
 import com.ericsson.eif.hansoft.configuration.util.H2HValidator;
 import com.ericsson.eif.hansoft.scheduler.QSchedule;
 
@@ -245,27 +244,12 @@ public class HansoftManager implements ServletContextListener,
             	validateH2Hconfiguration();
             }
             
-            loadLeanSync();          
-            
             QSchedule.getInstance();
 
         } catch (SecurityException | IllegalArgumentException | HPMSdkException | HPMSdkJavaException e) {
             logger.error("Failed during static init of Hansoft Adapter", e);
         }
     }    	
-    
-    /**
-     * Read lean sync configuration file
-     */
-    private static void loadLeanSync() {
-    	String configPath = "";
-        try {
-        	configPath = adapterServletHome + File.separator + Constants.LEAN_SYNC_CONFIG_FILE;
-        	LeanSyncConfig.getConfigFromFile(configPath);
-        } catch (Throwable t) {
-        	logger.error("Failed to parse LeanSync configuration file: " + configPath, t);
-        }		
-	}
 
 	/**
 	 * Read H2H configuration file
